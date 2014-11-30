@@ -1,47 +1,46 @@
-# Tutorial 1: Serialization
+# 教程 1: 序列化
 
-## Introduction
+## 简介
 
-This tutorial will cover creating a simple pastebin code highlighting Web API.  Along the way it will introduce the various components that make up REST framework, and give you a comprehensive understanding of how everything fits together.
+本教程将创建一个简单醒目的 Web API（网络应用程序接口）代码。它会介绍一路上整理 REST framework 的各个组成部分，并且会给你一个关于每部分如何配合在一起的综合理解。
 
-The tutorial is fairly in-depth, so you should probably get a cookie and a cup of your favorite brew before getting started.  If you just want a quick overview, you should head over to the [quickstart] documentation instead.
-
----
-
-**Note**: The code for this tutorial is available in the [tomchristie/rest-framework-tutorial][repo] repository on GitHub.  The completed implementation is also online as a sandbox version for testing, [available here][sandbox].
+本教程是比较深入的，所以在开始之前，你应该拿点饼干和一杯你喜爱的饮料。如果你想快速的浏览，你应该去看[quickstart]文档
 
 ---
 
-## Setting up a new environment
+**注意**: 在GitHub库[tomchristie/rest-framework-tutorial][repo]中的本教程代码是可用的，已经在线上完整实现，也是用于测试的沙盒版本， [可用][sandbox]。
 
-Before we do anything else we'll create a new virtual environment, using [virtualenv].  This will make sure our package configuration is kept nicely isolated from any other projects we're working on.
+---
+
+## 建立一个新的环境
+
+在我们做任何事情之前，我们应创建一个新的虚拟环境, 使用工具 [virtualenv]。这将确保我们的项目包配置与任何其他正在使用的项目包保持很好的隔离。
 
     :::bash
     virtualenv env
     source env/bin/activate
 
-Now that we're inside a virtualenv environment, we can install our package requirements.
+现在，我们在一个virtualenv环境里，安装我们需要的项目包。
 
     pip install django
     pip install djangorestframework
-    pip install pygments  # We'll be using this for the code highlighting
+    pip install pygments  # 我们将用这个包来显示代码高亮
 
-**Note:** To exit the virtualenv environment at any time, just type `deactivate`.  For more information see the [virtualenv documentation][virtualenv].
+**注意:** 在任何时候，退出virtualenv环境, 只需输入 `deactivate`。更多信息参考 [virtualenv documentation][virtualenv].
 
-## Getting started
+## 开始
 
-Okay, we're ready to get coding.
-To get started, let's create a new project to work with.
+好的，我们已经准备好了。开始了, 我们先创建一个新的项目。
 
     cd ~
     django-admin.py startproject tutorial
     cd tutorial
 
-Once that's done we can create an app that we'll use to create a simple Web API.
+然后，我们来创建一个应用，用于创建一个简单的 Web API。
 
     python manage.py startapp snippets
 
-We'll need to add our new `snippets` app and the `rest_framework` app to `INSTALLED_APPS`. Let's edit the `tutorial/settings.py` file:
+我们需要把新的应用名`snippets`和应用名`rest_framework`加到`INSTALLED_APPS`中。 让我们编辑文件 `tutorial/settings.py`:
 
     INSTALLED_APPS = (
         ...
@@ -49,17 +48,17 @@ We'll need to add our new `snippets` app and the `rest_framework` app to `INSTAL
         'snippets',
     )
 
-We also need to wire up the root urlconf, in the `tutorial/urls.py` file, to include our snippet app's URLs.
+我们也需要配置url, 在文件 `tutorial/urls.py` 中, 要包含新应用 snippets 的 urls。
 
     urlpatterns = [
         url(r'^', include('snippets.urls')),
     ]
 
-Okay, we're ready to roll.
+ok，我们准备启动。
 
-## Creating a model to work with
+## 创建一个模型
 
-For the purposes of this tutorial we're going to start by creating a simple `Snippet` model that is used to store code snippets.  Go ahead and edit the `snippets/models.py` file.  Note: Good programming practices include comments.  Although you will find them in our repository version of this tutorial code, we have omitted them here to focus on the code itself.
+本教程的目的是通过创建一个简单的存储代码片段的`Snippet` 模型而开始我们的项目。接下来编辑`snippets/models.py`文件。 注意: 优秀的程序是有注释的。虽然你会在我们教程的代码库版本里找到它们，但在这里我们已经省略了，还是让我们把重点放在代码本身上吧。
 
     from django.db import models
     from pygments.lexers import get_all_lexers
@@ -85,14 +84,14 @@ For the purposes of this tutorial we're going to start by creating a simple `Sni
         class Meta:
             ordering = ('created',)
 
-We'll also need to create an initial migration for our snippet model, and sync the database for the first time.
+我们也需要为snippet模型创建一个初始的迁移（会看到app下有相应的文件夹和文件生成），用于首次同步数据库。
 
     python manage.py makemigrations snippets
     python manage.py migrate
 
-## Creating a Serializer class
+## 创建一个序列化类
 
-The first thing we need to get started on our Web API is to provide a way of serializing and deserializing the snippet instances into representations such as `json`.  We can do this by declaring serializers that work very similar to Django's forms.  Create a file in the `snippets` directory named `serializers.py` and add the following.
+我们需要开始的第一件事情是，Web API 提供了一种序列化和反序列化snippet模型实例成类似 `json`样子的方法。 我们可以声明序列化，它的工作原理跟Django的表单很相似。在`snippets`（app名字）的目录下创建一个文件，命名为 `serializers.py` 并添加以下内容。
 
     from django.forms import widgets
     from rest_framework import serializers
@@ -128,21 +127,21 @@ The first thing we need to get started on our Web API is to provide a way of ser
             instance.save()
             return instance
 
-The first part of the serializer class defines the fields that get serialized/deserialized.  The `create()` and `update()` methods define how fully fledged instances are created or modified when calling `serializer.save()`
+序列化类的第一部分定义序列化/反序列化的域（字段）。当调用 `serializer.save()`方法时，`create()` 或 `update()`方法就会去创建或者修改完整的实例。
 
-A serializer class is very similar to a Django `Form` class, and includes similar validation flags on the various fields, such as `required`, `max_length` and `default`.
+序列化类和Django的 `Form` 类非常相似，包括在各种字段上的相似验证标志，像 `required`, `max_length` 和 `default`。
 
-The field flags can also control how the serializer should be displayed in certain circumstances, such as when rendering to HTML. The `style={'type': 'textarea'}` flag above is equivelent to using `widget=widgets.Textarea` on a Django `Form` class. This is particularly useful for controlling how the browsable API should be displayed, as we'll see later in the tutorial.
+字段的标示也可以控制序列化在特定的情况下怎样去显示，例如去渲染HTML的时候。在Django的 `Form`类中，`style={'type': 'textarea'}`和 `widget=widgets.Textarea`的作用是等价的。对于如何控制显示API的样子，这点是非常有用的。我们在之后的教程中会看到。
 
-We can actually also save ourselves some time by using the `ModelSerializer` class, as we'll see later, but for now we'll keep our serializer definition explicit.  
+使用 `ModelSerializer` 类，确实可以节省我们自己的时间。我们之后会看到，但是现在我们要全面的学习序列化（从基础学起）。  
 
-## Working with Serializers
+## 使用序列化
 
-Before we go any further we'll familiarize ourselves with using our new Serializer class.  Let's drop into the Django shell.
+在我们深入学习之前，我们要熟悉使用新的序列化类，让我们进入到Django的shell命令行（交换层）。
 
     python manage.py shell
 
-Okay, once we've got a few imports out of the way, let's create a couple of code snippets to work with.
+ok, 首先我们要写几个导入（from...import...）语句，然后让我们来创建两条Snippet模型的数据。
 
     from snippets.models import Snippet
     from snippets.serializers import SnippetSerializer
@@ -155,28 +154,28 @@ Okay, once we've got a few imports out of the way, let's create a couple of code
     snippet = Snippet(code='print "hello, world"\n')
     snippet.save()
 
-We've now got a few snippet instances to play with.  Let's take a look at serializing one of those instances.
+现在我们已经有几个Snippet模型的实例了，我们来看下那些实例中的一条序列化数据。
 
     serializer = SnippetSerializer(snippet)
     serializer.data
     # {'pk': 2, 'title': u'', 'code': u'print "hello, world"\n', 'linenos': False, 'language': u'python', 'style': u'friendly'}
 
-At this point we've translated the model instance into Python native datatypes.  To finalize the serialization process we render the data into `json`.
+此时，我们已经把模型实例转化成python的原生数据类型了。最后，我们把数据渲染成 `json`就是序列化的过程了。
 
     content = JSONRenderer().render(serializer.data)
     content
     # '{"pk": 2, "title": "", "code": "print \\"hello, world\\"\\n", "linenos": false, "language": "python", "style": "friendly"}'
 
-Deserialization is similar.  First we parse a stream into Python native datatypes...
+反序列化也是一样的。首先我们解析一个数据流成python的原生数据类型...
 
-    # This import will use either `StringIO.StringIO` or `io.BytesIO`
-    # as appropriate, depending on if we're running Python 2 or Python 3.
+    # 这里的导入将使用 `StringIO.StringIO` 或者 `io.BytesIO`
+    # 分别对应Python 2 或者 Python 3的版本。
     from rest_framework.compat import BytesIO
 
     stream = BytesIO(content)
     data = JSONParser().parse(stream)
 
-...then we restore those native datatypes into to a fully populated object instance.
+...然后我们恢复原生数据类型为一个完整的对象实例。
 
     serializer = SnippetSerializer(data=data)
     serializer.is_valid()
@@ -184,29 +183,28 @@ Deserialization is similar.  First we parse a stream into Python native datatype
     serializer.object
     # <Snippet: Snippet object>
 
-Notice how similar the API is to working with forms.  The similarity should become even more apparent when we start writing views that use our serializer.
+注意到了么，API的工作原理跟forms是多么的相似啊。 当用我们的序列化写views时，它们的相似就变的更明显了。
 
-We can also serialize querysets instead of model instances.  To do so we simply add a `many=True` flag to the serializer arguments.
+我们也能序列化模型实例的集合，只需在序列化类中简单地添加一个 `many=True` 参数。
 
     serializer = SnippetSerializer(Snippet.objects.all(), many=True)
     serializer.data
     # [{'pk': 1, 'title': u'', 'code': u'foo = "bar"\n', 'linenos': False, 'language': u'python', 'style': u'friendly'}, {'pk': 2, 'title': u'', 'code': u'print "hello, world"\n', 'linenos': False, 'language': u'python', 'style': u'friendly'}]
 
-## Using ModelSerializers
+## 使用模型序列化
 
-Our `SnippetSerializer` class is replicating a lot of information that's also contained in the `Snippet` model.  It would be nice if we could keep our code a bit  more concise.
+我们的 `SnippetSerializer` 类正在复制 `Snippet` 模型的大量信息。如果我们能保持我们的代码更简洁一点就好了。
 
-In the same way that Django provides both `Form` classes and `ModelForm` classes, REST framework includes both `Serializer` classes, and `ModelSerializer` classes.
+与Django提供的 `Form` 类和 `ModelForm` 类同样的方式，REST framework 也提供了 `Serializer` 类和 `ModelSerializer` 类。
 
-Let's look at refactoring our serializer using the `ModelSerializer` class.
-Open the file `snippets/serializers.py` again, and edit the `SnippetSerializer` class.
+来看看用 `ModelSerializer` 类来重构我们的序列化。再次打开 `snippets/serializers.py` 文件, 编辑 `SnippetSerializer` 类。
 
     class SnippetSerializer(serializers.ModelSerializer):
         class Meta:
             model = Snippet
             fields = ('id', 'title', 'code', 'linenos', 'language', 'style')
 
-Once nice property that serializers have is that you can inspect all the fields an serializer instance, by printing it's representation. Open the Django shell with `python manange.py shell`, then try the following:
+序列化有一个很好的属性是你可以检查一个序列化实例的所有字段，你可以打印出来。进入Django的shell交互页面，操作如下：
 
     >>> from snippets.serializers import SnippetSerializer
     >>> serializer = SnippetSerializer()
@@ -219,19 +217,18 @@ Once nice property that serializers have is that you can inspect all the fields 
         language = ChoiceField(choices=[('Clipper', 'FoxPro'), ('Cucumber', 'Gherkin'), ('RobotFramework', 'RobotFramework'), ('abap', 'ABAP'), ('ada', 'Ada')...
         style = ChoiceField(choices=[('autumn', 'autumn'), ('borland', 'borland'), ('bw', 'bw'), ('colorful', 'colorful')...
 
-It's important to remember that `ModelSerializer` classes don't do anything particularly magically, they are simply a shortcut to creating a serializer class with:
+记住， `ModelSerializer` 类做不了什么魔术般的变化，它只是一个简单创建序列化类的快捷方式：
 
-* An automatically determined set of fields.
-* Simple default implementations for the `create()` and `update()` methods.
+* 自动确认字段的设置。
+* 默认实现 `create()` 和 `update()` 方法。
 
-## Writing regular Django views using our Serializer
+## 用序列化写具有Django规范的视图
 
-Let's see how we can write some API views using our new Serializer class.
-For the moment we won't use any of REST framework's other features, we'll just write the views as regular Django views.
+我们来看下用新的序列化类如何写一些API的视图。此刻，我们不使用 REST framework 的任何特性，用Django的规范来写一个视图。
 
-We'll start off by creating a subclass of HttpResponse that we can use to render any data we return into `json`.
+我们先创建一个 HttpResponse 的子类，用来把所有的返回数据转成 `json` 格式。
 
-Edit the `snippets/views.py` file, and add the following.
+编辑 `snippets/views.py` 文件，添加以下内容。
 
     from django.http import HttpResponse
     from django.views.decorators.csrf import csrf_exempt
@@ -249,7 +246,7 @@ Edit the `snippets/views.py` file, and add the following.
             kwargs['content_type'] = 'application/json'
             super(JSONResponse, self).__init__(content, **kwargs)
 
-The root of our API is going to be a view that supports listing all the existing snippets, or creating a new snippet.
+API的本质就是一个支持展示所有现存 snippet 实例数据或者创建一个 snippet 实例的视图。
 
     @csrf_exempt
     def snippet_list(request):
@@ -269,9 +266,9 @@ The root of our API is going to be a view that supports listing all the existing
                 return JSONResponse(serializer.data, status=201)
             return JSONResponse(serializer.errors, status=400)
 
-Note that because we want to be able to POST to this view from clients that won't have a CSRF token we need to mark the view as `csrf_exempt`.  This isn't something that you'd normally want to do, and REST framework views actually use more sensible behavior than this, but it'll do for our purposes right now.
+值得注意的是，因为我们要把数据从客户端提交到这个视图，而客户端没有一个 CSRF（Cross-site request forgery 跨站请求伪造）的验证，所以要给视图的这个方法加一个修饰器 `csrf_exempt`。 这通常不是你要做的，REST framework 视图实际上用了比这更明智的行为，但是现在这么写是为了实现我们的目的。
 
-We'll also need a view which corresponds to an individual snippet, and can be used to retrieve, update or delete the snippet.
+我们也需要对应某一个 snippet 实例操作的视图，查询，更新或者删除这个 snippet 实例。
 
     @csrf_exempt
     def snippet_detail(request, pk):
@@ -299,7 +296,7 @@ We'll also need a view which corresponds to an individual snippet, and can be us
             snippet.delete()
             return HttpResponse(status=204)
 
-Finally we need to wire these views up.  Create the `snippets/urls.py` file:
+最后，我们需要把这些视图连起来。创建一个 `snippets/urls.py` 文件：
 
     from django.conf.urls import patterns, url
     from snippets import views
@@ -309,17 +306,17 @@ Finally we need to wire these views up.  Create the `snippets/urls.py` file:
         url(r'^snippets/(?P<pk>[0-9]+)/$', views.snippet_detail),
     ]
 
-It's worth noting that there are a couple of edge cases we're not dealing with properly at the moment.  If we send malformed `json`, or if a request is made with a method that the view doesn't handle, then we'll end up with a 500 "server error" response.  Still, this'll do for now.
+值得注意的是，这里有两个边缘情况我们此刻还不能适当的处理。 如果我们发送一个不规则的 `json` 或者一个由方法生成的请求，这个视图是无法处理的，然后我们的服务器就会返回一个 500 "server error" 的错误信息。但是现在的仍然要这么做。
 
-## Testing our first attempt at a Web API
+## 测试第一个Web API
 
-Now we can start up a sample server that serves our snippets.
+现在我们启动一个简单的服务。
 
-Quit out of the shell...
+退出shell的交互界面。。。
 
 	quit()
 
-...and start up Django's development server.
+。。。启动Django的开发服务。
 
 	python manage.py runserver
 
@@ -330,29 +327,29 @@ Quit out of the shell...
 	Development server is running at http://127.0.0.1:8000/
 	Quit the server with CONTROL-C.
 
-In another terminal window, we can test the server.
+在另一个终端窗口测试服务接口。
 
-We can get a list of all of the snippets.
+我们可以得到snippet所有实例的一个列表。
 
 	curl http://127.0.0.1:8000/snippets/
 
 	[{"id": 1, "title": "", "code": "foo = \"bar\"\n", "linenos": false, "language": "python", "style": "friendly"}, {"id": 2, "title": "", "code": "print \"hello, world\"\n", "linenos": false, "language": "python", "style": "friendly"}]
 
-Or we can get a particular snippet by referencing its id.
+或者我们能通过 snippet 实例的 id 得到一个详细的 snippet 实例信息。
 
 	curl http://127.0.0.1:8000/snippets/2/
 
 	{"id": 2, "title": "", "code": "print \"hello, world\"\n", "linenos": false, "language": "python", "style": "friendly"}
 
-Similarly, you can have the same json displayed by visiting these URLs in a web browser.
+同样的，你可以在浏览器地址中键入那些URLs得到相同的 json 数据。
 
-## Where are we now
+## 我们现在在哪
 
-We're doing okay so far, we've got a serialization API that feels pretty similar to Django's Forms API, and some regular Django views.
+到目前为止，我们做的都很好，我们已经有了一个感觉跟 Django 的 Forms API 十分相似的序列化 API，还有一些 Django 规范的视图。
 
-Our API views don't do anything particularly special at the moment, beyond serving `json` responses, and there are some error handling edge cases we'd still like to clean up, but it's a functioning Web API.
+此刻，我们的 API 视图还做不了其他特别的事，除了对 `json` 响应, 在处理边缘情况还有些错误，我们想清理，但是这是 Web API 的一个功能。
 
-We'll see how we can start to improve things in [part 2 of the tutorial][tut-2].
+我们会在[part 2 of the tutorial][tut-2]看到怎么样去改善这些。
 
 [quickstart]: quickstart.md
 [repo]: https://github.com/tomchristie/rest-framework-tutorial

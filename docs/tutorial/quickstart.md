@@ -1,10 +1,10 @@
-# Quickstart
+# 快速开始
 
-We're going to create a simple API to allow admin users to view and edit the users and groups in the system.
+我们将要创建一个简单的 API ，允许管理员用户去访问，编辑用户和组信息。
 
-## Project setup
+## 项目创建
 
-Create a new Django project named `tutorial`, then start a new app called `quickstart`.
+创建一个新的 Django 项目，名字叫 `tutorial`, 然后在项目里建一个应用叫 `quickstart`。
 
     # Create the project directory
     mkdir tutorial
@@ -24,19 +24,19 @@ Create a new Django project named `tutorial`, then start a new app called `quick
     django-admin.py startapp quickstart
 	cd ..
 
-Now sync your database for the first time:
+第一次同步数据库:
 
     python manage.py migrate
 
-We'll also create an initial user named `admin` with a password of `password`. We'll authenticate as that user later in our example.
+我们也要创建一个初始的用户名 `admin` ，密码 `password`。 在后面的例子中我们将会认证用户。
 
     python manage.py createsuperuser
 
-Once you've set up a database and initial user created and ready to go, open up the app's directory and we'll get coding...
+如果我们建立完一个数据库并且初始用户，那么准备开始吧，打开应用目录开始写代码。。。
 
-## Serializers
+## 序列化
 
-First up we're going to define some serializers. Let's create a new module named `tutorial/quickstart/serializers.py` that we'll use for our data representations.
+首先，我们先定义一些序列化类。我们创建一个文件 `tutorial/quickstart/serializers.py` ，将用于数据展示。
 
     from django.contrib.auth.models import User, Group
     from rest_framework import serializers
@@ -53,11 +53,11 @@ First up we're going to define some serializers. Let's create a new module named
             model = Group
             fields = ('url', 'name')
 
-Notice that we're using hyperlinked relations in this case, with `HyperlinkedModelSerializer`.  You can also use primary key and various other relationships, but hyperlinking is good RESTful design.
+注意，在这种情况下，我们使用了超链接关系 `HyperlinkedModelSerializer`。你也可以是使用主键和其他各种关系，但是超链接是 RESTful 很棒的设计。
 
-## Views
+## 视图
 
-Right, we'd better write some views then.  Open `tutorial/quickstart/views.py` and get typing.
+我们最好写点视图，打开 `tutorial/quickstart/views.py` 文件键入以下内容。
 
     from django.contrib.auth.models import User, Group
     from rest_framework import viewsets
@@ -79,17 +79,17 @@ Right, we'd better write some views then.  Open `tutorial/quickstart/views.py` a
         queryset = Group.objects.all()
         serializer_class = GroupSerializer
 
-Rather than write multiple views we're grouping together all the common behavior into classes called `ViewSets`.
+我们要组合所有常用的行为成为类叫 `ViewSets`，而不是写许多的视图。
 
-We can easily break these down into individual views if we need to, but using viewsets keeps the view logic nicely organized as well as being very concise.
+如果我们需要的话，能很容易的把这些变成单个的视图，但是使用 viewsets 可以保持视图的逻辑性组织又很简明。
 
-Notice that our viewset classes here are a little different from those in the [frontpage example][readme-example-api], as they include `queryset` and `serializer_class` attributes, instead of a `model` attribute.
+注意，这的 viewset 类和 [frontpage example][readme-example-api] 中的有一点不同， 包括 `queryset` 和 `serializer_class` 属性，而不是 `model` 属性。
 
-For trivial cases you can simply set a `model` attribute on the `ViewSet` class and the serializer and queryset will be automatically generated for you.  Setting the `queryset` and/or `serializer_class` attributes gives you more explicit control of the API behaviour, and is the recommended style for most applications.
+对于一般的情况，你可以在` viewset `类简单的设置一个 `model` 属性值，序列化和查询集合的属性值会自动为你生成。设置 `queryset` 或 `serializer_class` 属性可以更明确 API 的控制行为, 并且这也是大多数应用推荐的风格（其实这里就是扩展的地方）。
 
-## URLs
+## 统一资源定位器
 
-Okay, now let's wire up the API URLs.  On to `tutorial/urls.py`...
+ok，现在我们把 API URLs连通。在这个文件 `tutorial/urls.py`。。。
 
     from django.conf.urls import url, include
     from rest_framework import routers
@@ -106,15 +106,15 @@ Okay, now let's wire up the API URLs.  On to `tutorial/urls.py`...
         url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
     ]
 
-Because we're using viewsets instead of views, we can automatically generate the URL conf for our API, by simply registering the viewsets with a router class.
+由于我们用viewsets 代替 views，所以对于我们的 API 接口可以自动生成 URL 的配置，使用一个路由（router）类来简单的注册viewsets。
 
-Again, if we need more control over the API URLs we can simply drop down to using regular class based views, and writing the URL conf explicitly.
+其次, 如果在 API 的 URL 中有很多控制，我们可以简单地降低到使用常规的基于类的视图，并明确地写明 URL 配置.
 
-Finally, we're including default login and logout views for use with the browsable API.  That's optional, but useful if your API requires authentication and you want to use the browsable API.
+最后, 使用可浏览的 API ，默认提供了登录和登出视图，这是可选的，但是，如果你的 API 请求认证并且你想使用可浏览的 API 时就很有用。
 
-## Settings
+## 设置
 
-We'd also like to set a few global settings.  We'd like to turn on pagination, and we want our API to only be accessible to admin users.  The settings module will be in `tutorial/settings.py`
+我们还要在 settings 文件里设置几个全局变量。如设置分页功能, 只有管理员用户访问功能。具体内容在 `tutorial/settings.py` 文件中。
 
     INSTALLED_APPS = (
         ...
@@ -126,17 +126,17 @@ We'd also like to set a few global settings.  We'd like to turn on pagination, a
         'PAGINATE_BY': 10
     }
 
-Okay, we're done.
+ok，我们做完了
 
 ---
 
-## Testing our API
+## 测试接口
 
-We're now ready to test the API we've built.  Let's fire up the server from the command line.
+现在我们测试下我们创建的 API。从命令行启动服务器。
 
     python ./manage.py runserver
 
-We can now access our API, both from the command-line, using tools like `curl`...
+也是使用命令行进入我们的 API ，linux系统下可以使用 `curl` 工具。
 
     bash: curl -H 'Accept: application/json; indent=4' -u admin:password http://127.0.0.1:8000/users/
     {
@@ -159,15 +159,15 @@ We can now access our API, both from the command-line, using tools like `curl`..
         ]
     }
 
-Or directly through the browser...
+或者使用浏览器。。。
 
 ![Quick start image][image]
 
-If you're working through the browser, make sure to login using the control in the top right corner.
+如果你用的是浏览器的话，确保在右上角可以控制登录。
 
-Great, that was easy!
+很好，就这么简单。
 
-If you want to get a more in depth understanding of how REST framework fits together head on over to [the tutorial][tutorial], or start browsing the [API guide][guide].
+如果你想更深入的理解 REST framework 是怎样结合覆盖参考 [the tutorial][tutorial], 或者浏览 [API guide][guide].
 
 [readme-example-api]: ../#example
 [image]: ../img/quickstart.png
