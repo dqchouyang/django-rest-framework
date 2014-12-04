@@ -1,41 +1,40 @@
-# Tutorial 2: Requests and Responses
+# 教程 2: 请求和响应
 
-From this point we're going to really start covering the core of REST framework.
-Let's introduce a couple of essential building blocks.
+从这章开始，我们要真正接触 REST framework 的核心。我们先介绍两个基本的构建块。
 
-## Request objects
+## 请求对象
 
-REST framework introduces a `Request` object that extends the regular `HttpRequest`, and provides more flexible request parsing.  The core functionality of the `Request` object is the `request.DATA` attribute, which is similar to `request.POST`, but more useful for working with Web APIs.
+REST framework 介绍 `Request` 对象，它继承于 `HttpRequest`, 并且提供了许多灵活的请求解析。 `Request` 对象的核心功能是 `request.DATA` 属性，它很像 `request.POST`, 但是在 Web APIs 中更实用。
 
     request.POST  # Only handles form data.  Only works for 'POST' method.
     request.DATA  # Handles arbitrary data.  Works for 'POST', 'PUT' and 'PATCH' methods.
 
-## Response objects
+## 响应对象
 
-REST framework also introduces a `Response` object, which is a type of `TemplateResponse` that takes unrendered content and uses content negotiation to determine the correct content type to return to the client.
+REST framework 也介绍 `Response` 对象，这是一种 `TemplateResponse` 类型，获取没有被渲染的内容并用内容协议去确定正确的内容类型返回给客户端。
 
     return Response(data)  # Renders to content type as requested by the client.
 
-## Status codes
+## 状态码
 
-Using numeric HTTP status codes in your views doesn't always make for obvious reading, and it's easy to not notice if you get an error code wrong.  REST framework provides more explicit identifiers for each status code, such as `HTTP_400_BAD_REQUEST` in the `status` module.  It's a good idea to use these throughout rather than using numeric identifiers.
+HTTP 的状态码是数字码形式，在视图中识别不是很明显，如果你有一个代码错误，它不容易被注意到。REST framework 为状态码提供了很多明确的标识，像 `status` 模块中的 `HTTP_400_BAD_REQUEST`。使用这些看起来要比使用数字码要好。
 
-## Wrapping API views
+## 封装 API 的视图
 
-REST framework provides two wrappers you can use to write API views.
+REST framework 提供了两个封装方法，你可以用它们来写 API 的视图。
 
-1. The `@api_view` decorator for working with function based views.
-2. The `APIView` class for working with class based views.
+1. `@api_view` 装饰器作用于视图的基本方法。
+2. `APIView` 类作用于视图的基本类。
 
-These wrappers provide a few bits of functionality such as making sure you receive `Request` instances in your view, and adding context to `Response` objects so that content negotiation can be performed.
+这些封装提供了几个功能，像确保在视图中你收到了实例，为 `Response` 对象添加内容以便协议内容可以被使用。
 
-The wrappers also provide behaviour such as returning `405 Method Not Allowed` responses when appropriate, and handling any `ParseError` exception that occurs when accessing `request.DATA` with malformed input.
+当非法使用的时候，封装提供了返回 `405 Method Not Allowed` 响应的行为。 当 `request.DATA` （请求）的格式不正确的时候，它会处理为 `ParseError` 的异常。
 
-## Pulling it all together
+## 拼凑起来
 
-Okay, let's go ahead and start using these new components to write a few views.
+ok，让我们用这些新的东西写几个视图吧。
 
-We don't need our `JSONResponse` class in `views.py` anymore, so go ahead and delete that.  Once that's done we can start refactoring our views slightly.
+在 `views.py` 文件中再也不需要 `JSONResponse` 类了，所以从现在开始删除它。按照这样做了，我们可以开始稍微重构视图了。
 
     from rest_framework import status
     from rest_framework.decorators import api_view
@@ -61,9 +60,9 @@ We don't need our `JSONResponse` class in `views.py` anymore, so go ahead and de
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-Our instance view is an improvement over the previous example.  It's a little more concise, and the code now feels very similar to if we were working with the Forms API.  We're also using named status codes, which makes the response meanings more obvious.
+这个视图是前面视图例子的一个改进。它略有简明，如果我们使用 Forms API 的话，就会感觉到他们的相似了。我们使用了状态码，它使响应的意思更明显。
 
-Here is the view for an individual snippet, in the `views.py` module.
+下面是针对一条 snippet 实例操作的视图,在 `views.py` 文件中。
 
     @api_view(['GET', 'PUT', 'DELETE'])
     def snippet_detail(request, pk):
@@ -90,15 +89,15 @@ Here is the view for an individual snippet, in the `views.py` module.
             snippet.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-This should all feel very familiar - it is not a lot different from working with regular Django views.
+这些应该都会感到很熟悉吧，它和Django的视图没有太大的不同。
 
-Notice that we're no longer explicitly tying our requests or responses to a given content type.  `request.DATA` can handle incoming `json` requests, but it can also handle `yaml` and other formats.  Similarly we're returning response objects with data, but allowing REST framework to render the response into the correct content type for us.
+注意，我们不再明确地把我们的请求或响应转成一个给定的内容类型。 `request.DATA` 能处理 `json` 形式的请求, 也可以处理 `yaml` 形式和其他形式。同样，我们返回对象是有数据携带的，而且允许 REST framework 渲染返回数据成正确的内容类型。
 
-## Adding optional format suffixes to our URLs
+## 给 URLs 添加可选格式后缀 
 
-To take advantage of the fact that our responses are no longer hardwired to a single content type let's add support for format suffixes to our API endpoints.  Using format suffixes gives us URLs that explicitly refer to a given format, and means our API will be able to handle URLs such as [http://example.com/api/items/4.json][json-url].
+对于一个单一的内容类型，我们的响应不再是固定的，利用这样的事实，给 API 结尾添加格式后缀。使用格式后缀可以明确设定URLs的格式，意味着我们的 API 能够处理这样的URL [http://example.com/api/items/4.json][json-url].
 
-Start by adding a `format` keyword argument to both of the views, like so.
+像这样，给两个视图添加一个关键字参数 `format` 。
 
     def snippet_list(request, format=None):
 
@@ -106,7 +105,7 @@ and
 
     def snippet_detail(request, pk, format=None):
 
-Now update the `urls.py` file slightly, to append a set of `format_suffix_patterns` in addition to the existing URLs.
+轻微更新下 `urls.py` 文件, 附加一套 `format_suffix_patterns` 除了现有的URLs。
 
     from django.conf.urls import patterns, url
     from rest_framework.urlpatterns import format_suffix_patterns
@@ -119,29 +118,29 @@ Now update the `urls.py` file slightly, to append a set of `format_suffix_patter
 
     urlpatterns = format_suffix_patterns(urlpatterns)
 
-We don't necessarily need to add these extra url patterns in, but it gives us a simple, clean way of referring to a specific format.
+这里不一定要加上这些额外的URL模式, 但它为我们提供了一个简单的，清晰的创建特殊格式的方法。
 
-## How's it looking?
+## 看起来怎么样？
 
-Go ahead and test the API from the command line, as we did in [tutorial part 1][tut-1].  Everything is working pretty similarly, although we've got some nicer error handling if we send invalid requests.
+先从命令行测试的API，就像教程 [tutorial part 1][tut-1]中那样。一切都是十分的相似， 如果我们发送无效的请求，那么我们已经有了一些更好的错误处理。
 
-We can get a list of all of the snippets, as before.
+我们可以像以前一样列出snippet模型的所有实例数据。
 
 	curl http://127.0.0.1:8000/snippets/
 
 	[{"id": 1, "title": "", "code": "foo = \"bar\"\n", "linenos": false, "language": "python", "style": "friendly"}, {"id": 2, "title": "", "code": "print \"hello, world\"\n", "linenos": false, "language": "python", "style": "friendly"}]
 
-We can control the format of the response that we get back, either by using the `Accept` header:
+我们可以控制得到的响应数据的格式，或者使用 `Accept` 标题:
 
     curl http://127.0.0.1:8000/snippets/ -H 'Accept: application/json'  # Request JSON
     curl http://127.0.0.1:8000/snippets/ -H 'Accept: text/html'         # Request HTML
 
-Or by appending a format suffix:
+或者追加一个格式后缀:
 
     curl http://127.0.0.1:8000/snippets/.json  # JSON suffix
     curl http://127.0.0.1:8000/snippets/.api   # Browsable API suffix
 
-Similarly, we can control the format of the request that we send, using the `Content-Type` header.
+一样的, 我们能控制发送请求的格式，使用 `Content-Type` 标题。
 
     # POST using form data
     curl -X POST http://127.0.0.1:8000/snippets/ -d "code=print 123"
@@ -153,19 +152,19 @@ Similarly, we can control the format of the request that we send, using the `Con
 
     {"id": 4, "title": "", "code": "print 456", "linenos": true, "language": "python", "style": "friendly"}
 
-Now go and open the API in a web browser, by visiting [http://127.0.0.1:8000/snippets/][devserver].
+现在在Web浏览器中打开API，这样访问 [http://127.0.0.1:8000/snippets/][devserver].
 
-### Browsability
+### 浏览功能
 
-Because the API chooses the content type of the response based on the client request, it will, by default, return an HTML-formatted representation of the resource when that resource is requested by a web browser.  This allows for the API to return a fully web-browsable HTML representation.
+因为API将选择基于客户端请求的响应内容类型，当浏览器请求资源时，默认返回一个HTML格式的资源。允许 API 返回一个完全基于Web浏览HTML形式。
 
-Having a web-browsable API is a huge usability win, and makes developing and using your API much easier.  It also dramatically lowers the barrier-to-entry for other developers wanting to inspect and work with your API.
+有一个Web浏览的 API 是一个巨大的应用性胜利，使开发和使用你的 API 更容易。它也大大的降低了其他开发人员检查和使用你的 API 的难度。
 
-See the [browsable api][browsable-api] topic for more information about the browsable API feature and how to customize it.
+查看 [browsable api][browsable-api] 课题，有关浏览API功能的更多信息和如何自定制它。
 
-## What's next?
+## 下步做什么
 
-In [tutorial part 3][tut-3], we'll start using class based views, and see how generic views reduce the amount of code we need to write.
+在 [tutorial part 3][tut-3], 我们将开始使用基于类的视图和如何用 generic views 减少我们需要写的代码量。
 
 [json-url]: http://example.com/api/items/4.json
 [devserver]: http://127.0.0.1:8000/snippets/
