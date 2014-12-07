@@ -1,10 +1,10 @@
-# Tutorial 3: Class Based Views
+# 教程 3: 基于类的视图
 
-We can also write our API views using class based views, rather than function based views.  As we'll see this is a powerful pattern that allows us to reuse common functionality, and helps us keep our code [DRY][dry].
+我们也可以用基于类的视图写我们的 API 视图, 而不是使用基于方法的视图。正如我们将看到这是一个能够重公用功能的强大模式，把代码简洁化 [DRY][dry]。
 
-## Rewriting our API using class based views
+## 用基于类的视图重写我们的 API
 
-We'll start by rewriting the root view as a class based view.  All this involves is a little bit of refactoring of `views.py`.
+我们将开始通过重写根视图作做为一个基于类的视图。涉及到的是一点 `views.py` 的重构。
 
     from snippets.models import Snippet
     from snippets.serializers import SnippetSerializer
@@ -30,7 +30,7 @@ We'll start by rewriting the root view as a class based view.  All this involves
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-So far, so good.  It looks pretty similar to the previous case, but we've got better separation between the different HTTP methods.  We'll also need to update the instance view in `views.py`.
+到目前为止，都很好。它看起来非常类似于以前的案例，但我们依不同的HTTP请求方式做更好的分离。我们还需要在文件 `views.py` 中更新实例视图。
 
     class SnippetDetail(APIView):
         """
@@ -60,9 +60,9 @@ So far, so good.  It looks pretty similar to the previous case, but we've got be
             snippet.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-That's looking good.  Again, it's still pretty similar to the function based view right now.
+看起来很好。但它仍然非常类似基于函数的视图。
 
-We'll also need to refactor our `urls.py` slightly now we're using class based views.
+现在我们使用基于类的视图，我们还需要重构 `urls.py` 。
 
     from django.conf.urls import patterns, url
     from rest_framework.urlpatterns import format_suffix_patterns
@@ -75,15 +75,15 @@ We'll also need to refactor our `urls.py` slightly now we're using class based v
 
     urlpatterns = format_suffix_patterns(urlpatterns)
 
-Okay, we're done.  If you run the development server everything should be working just as before.
+ok，我们已经做完。如果您运行开发服务器，每个功能都跟以前一样在运作。
 
-## Using mixins
+## 使用混合（mixin）
 
-One of the big wins of using class based views is that it allows us to easily compose reusable bits of behaviour.
+使用基于类的视图的一个巨大收获是，它允许我们轻松地组合可复用少量的行为。
 
-The create/retrieve/update/delete operations that we've been using so far are going to be pretty similar for any model-backed API views we create.  Those bits of common behaviour are implemented in REST framework's mixin classes.
+到目前为止,我们已经使用创建/检索/更新/删除操作，都将是非常相似于任何我们创建的模型支持的 API 视图。那些少量共同行为都会在 REST framework 的混合类中实现。
 
-Let's take a look at how we can compose the views by using the mixin classes.  Here's our `views.py` module again.
+让我们看看，如何使用 mixins 类构建这个视图。这是 `views.py` 内容。
 
     from snippets.models import Snippet
     from snippets.serializers import SnippetSerializer
@@ -102,9 +102,9 @@ Let's take a look at how we can compose the views by using the mixin classes.  H
         def post(self, request, *args, **kwargs):
             return self.create(request, *args, **kwargs)
 
-We'll take a moment to examine exactly what's happening here.  We're building our view using `GenericAPIView`, and adding in `ListModelMixin` and `CreateModelMixin`.
+我们会花一点时间审视下这里到底发生了什么。我们用 `GenericAPIView`，`ListModelMixin` 和 `CreateModelMixin` 创建视图。
 
-The base class provides the core functionality, and the mixin classes provide the `.list()` and `.create()` actions.  We're then explicitly binding the `get` and `post` methods to the appropriate actions.  Simple enough stuff so far.
+基类提供了核心功能，mixin 类提供了 `.list()` 和 `.create()` 方法。然后对于适当的行为明确地绑定 `get` 和 `post` 方法。足够简单吧。
 
     class SnippetDetail(mixins.RetrieveModelMixin,
                         mixins.UpdateModelMixin,
@@ -122,11 +122,11 @@ The base class provides the core functionality, and the mixin classes provide th
         def delete(self, request, *args, **kwargs):
             return self.destroy(request, *args, **kwargs)
 
-Pretty similar.  Again we're using the `GenericAPIView` class to provide the core functionality, and adding in mixins to provide the `.retrieve()`, `.update()` and `.destroy()` actions.
+同样的。我们再次使用 `GenericAPIView` 类提供的核心功能，mixins 还提供了 `.retrieve()`， `.update()` 和 `.destroy()` 方法。
 
-## Using generic class based views
+## 使用基于 generic 类的视图
 
-Using the mixin classes we've rewritten the views to use slightly less code than before, but we can go one step further.  REST framework provides a set of already mixed-in generic views that we can use to trim down our `views.py` module even more.
+使用 mixin 类重写了视图代码量比以前明显少了，但我们可以再向前走一步。REST framework 提供了一套在 generic 视图里已经混合好的类，可以更多的减少 `views.py` 内容。
 
     from snippets.models import Snippet
     from snippets.serializers import SnippetSerializer
@@ -142,9 +142,9 @@ Using the mixin classes we've rewritten the views to use slightly less code than
         queryset = Snippet.objects.all()
         serializer_class = SnippetSerializer
 
-Wow, that's pretty concise.  We've gotten a huge amount for free, and our code looks like good, clean, idiomatic Django.
+哇，那真的很简洁，我们已经得到了大量的自由，我们的代码看起来像漂亮的，干净的，地道的Django。
 
-Next we'll move onto [part 4 of the tutorial][tut-4], where we'll take a look at how we can deal with authentication and permissions for our API.
+下一步我们将转移到 [part 4 of the tutorial][tut-4], 那我们将会看到如何处理认证和权限的 API。
 
 [dry]: http://en.wikipedia.org/wiki/Don't_repeat_yourself
 [tut-4]: 4-authentication-and-permissions.md
