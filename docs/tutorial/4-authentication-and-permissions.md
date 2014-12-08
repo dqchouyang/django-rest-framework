@@ -1,31 +1,30 @@
-# Tutorial 4: Authentication & Permissions
+# 教程 4: 认证和权限
 
-Currently our API doesn't have any restrictions on who can edit or delete code snippets.  We'd like to have some more advanced behavior in order to make sure that:
+目前我们的 API 没有任何限制谁可以编辑或删除 snippets 实例。我们想要一些更高级的行为来确保:
 
-* Code snippets are always associated with a creator.
-* Only authenticated users may create snippets.
-* Only the creator of a snippet may update or delete it.
-* Unauthenticated requests should have full read-only access.
+* snippets 实例与创建者关联。
+* 只有认证过的用户可以创建 snippets 实例。
+* 只有 snippet 的创建者可以更新和删除。
+* 未认证通过的请求应该有只读入口。
 
-## Adding information to our model
+## 为模型添加信息
 
-We're going to make a couple of changes to our `Snippet` model class.
-First, let's add a couple of fields.  One of those fields will be used to represent the user who created the code snippet.  The other field will be used to store the highlighted HTML representation of the code.
+我们要对 `Snippet` 模型类做两个改变。一个是，加两个字段，一个字段用来代表创建snippet 实例的用户。另一个用来存储表示高亮HTML的代码。
 
-Add the following two fields to the `Snippet` model in `models.py`.
+添加以下两个字段到 `Snippet` 应用中的 `models.py`文件中。
 
     owner = models.ForeignKey('auth.User', related_name='snippets')
     highlighted = models.TextField()
 
-We'd also need to make sure that when the model is saved, that we populate the highlighted field, using the `pygments` code highlighting library.
+当模型保存时我们还需要确认，我们将突出显示高亮的字段，这里使用 `pygments` 代码高亮库。
 
-We'll need some extra imports:
+我们需要一些额外的导入:
 
     from pygments.lexers import get_lexer_by_name
     from pygments.formatters.html import HtmlFormatter
     from pygments import highlight
 
-And now we can add a `.save()` method to our model class:
+在模型类里添加 `.save()` 方法:
 
     def save(self, *args, **kwargs):
         """
@@ -40,21 +39,20 @@ And now we can add a `.save()` method to our model class:
         self.highlighted = highlight(self.code, lexer, formatter)
         super(Snippet, self).save(*args, **kwargs)
 
-When that's all done we'll need to update our database tables.
-Normally we'd create a database migration in order to do that, but for the purposes of this tutorial, let's just delete the database and start again.
+当一切都做完后，我们需要更新数据库表。通常我们会创造一个数据库迁移，就是为了表字段的变化，但是本篇教程的目的只是删除数据库并重新开始创建。
 
     rm tmp.db
     rm -r snippets/migrations
     python manage.py makemigrations snippets
     python manage.py migrate
 
-You might also want to create a few different users, to use for testing the API.  The quickest way to do this will be with the `createsuperuser` command.
+您可能还需要创建一些不同的用户，用于测试 API。最快的方法是使用 `createsuperuser` 命令。
 
     python manage.py createsuperuser
 
-## Adding endpoints for our User models
+## 给 User 模型添加端点 endpoints 
 
-Now that we've got some users to work with, we'd better add representations of those users to our API.  Creating a new serializer is easy. In `serializers.py` add:
+现在，我们已经有了一些用户，我们最好把这些用户信息体现在我们的 API 中。创建一个序列化是容易的。在 `serializers.py` 中添加以下内容:
 
     from django.contrib.auth.models import User
 
@@ -65,9 +63,9 @@ Now that we've got some users to work with, we'd better add representations of t
             model = User
             fields = ('id', 'username', 'snippets')
 
-Because `'snippets'` is a *reverse* relationship on the User model, it will not be included by default when using the `ModelSerializer` class, so we needed to add an explicit field for it.
+由于 `'snippets'` 在 User 模型中是一个 *reverse* 关系，当使用 `ModelSerializer` 类时，默认是不包含的，所以我们需要添加一个明确字段。
 
-We'll also add a couple of views to `views.py`.  We'd like to just use read-only views for the user representations, so we'll use the `ListAPIView` and `RetrieveAPIView` generic class based views.
+在 `views.py` 中需要添加两个视图。 对于user的信息显示我们只提供只读视图，所以我们将使用generic里的 `ListAPIView` 和 `RetrieveAPIView` 类。
 
     from django.contrib.auth.models import User
 
@@ -81,84 +79,83 @@ We'll also add a couple of views to `views.py`.  We'd like to just use read-only
         queryset = User.objects.all()
         serializer_class = UserSerializer
 
-Make sure to also import the `UserSerializer` class
+确定导入 `UserSerializer` 类。
 
 	from snippets.serializers import UserSerializer
 
-Finally we need to add those views into the API, by referencing them from the URL conf. Add the following to the patterns in `urls.py`.
+最后，我们需要添加这些视图到 API 里，通过 URL 配置引用。在 `urls.py` 中添加下面的样品。
 
     url(r'^users/$', views.UserList.as_view()),
     url(r'^users/(?P<pk>[0-9]+)/$', views.UserDetail.as_view()),
 
-## Associating Snippets with Users
+## 关联 Snippets 和 Users 模型
 
-Right now, if we created a code snippet, there'd be no way of associating the user that created the snippet, with the snippet instance.  The user isn't sent as part of the serialized representation, but is instead a property of the incoming request.
+现在，如果我们创造了一个 snippet 实例，也没有办法创建关联 snippet 的用户。用户信息没有像序列化那样形式发送过来，而是传入请求的属性。
 
-The way we deal with that is by overriding a `.perform_create()` method on our snippet views, that allows us to modify how the instance save is managed, and handle any information that is implicit in the incoming request or requested URL.
+处理这个问题的方法就是在 snippet 视图中重写 `.perform_create()` 方法，允许我们修改如何保存实例，并处理任何隐藏在请求或请求的 URL 中的信息。
 
-On the `SnippetList` view class, add the following method:
+在 `SnippetList` 视图类里，添加以下方法：
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-The `create()` method of our serializer will now be passed an additional `'owner'` field, along with the validated data from the request.
+序列化的` create() `方法通过一个额外的` 'owner”`字段来保存，其验证过的数据来自于请求。
 
-## Updating our serializer
+## 更新序列化
 
-Now that snippets are associated with the user that created them, let's update our `SnippetSerializer` to reflect that.  Add the following field to the serializer definition in `serializers.py`:
+现在，snippet 模型与创建它的用户相关联起来，更新我们的 ` snippetserializer ` 显示那些。在 `serializers.py`中添加序列化字段:
 
     owner = serializers.ReadOnlyField(source='owner.username')
 
-**Note**: Make sure you also add `'owner',` to the list of fields in the inner `Meta` class.
+**注意**: 确定你已经在 `Meta` 类里列出 `'owner',` 字段。
 
-This field is doing something quite interesting.  The `source` argument controls which attribute is used to populate a field, and can point at any attribute on the serialized instance.  It can also take the dotted notation shown above, in which case it will traverse the given attributes, in a similar way as it is used with Django's template language.
+此字段正在做一些很有趣的事。该 `source` 参数控制的属性是用来填充字段，并可以指向序列化实例的任何属性。它也能采用虚线法表示以上内容，在这种情况下，它将遍历给定的属性，跟使用Django模板语言方式类似。
 
-The field we've added is the untyped `ReadOnlyField` class, in contrast to the other typed fields, such as `CharField`, `BooleanField` etc...  The untyped `ReadOnlyField` is always read-only, and will be used for serialized representations, but will not be used for updating model instances when they are deserialized. We could have also used `CharField(read_only=True)` here.
+我们添加的这个字段是非类型化的 `ReadOnlyField` 类，对比下其他类型的字段，例如 `CharField`, `BooleanField` 等...  非类型化的 `ReadOnlyField` 总是只读的，并且将会被用在序列化的数据的显示上，但是当反向序列化时，它是不能用于更新模型实例的。这里我们也可以使用 `CharField(read_only=True)`。
 
-## Adding required permissions to views
+## 给视图添加必要的权限
 
-Now that code snippets are associated with users, we want to make sure that only authenticated users are able to create, update and delete code snippets.
+现在，snippet 模型是与用户模型相关联的，我们要确保只有授权的用户能够创建，更新和删除 snippet 数据。
 
-REST framework includes a number of permission classes that we can use to restrict who can access a given view.  In this case the one we're looking for is `IsAuthenticatedOrReadOnly`, which will ensure that authenticated requests get read-write access, and unauthenticated requests get read-only access.
+REST framework 包含多个权限类我们可以用来限制谁可以访问一个给定的视图。在这种情况下，我们寻找的是 `IsAuthenticatedOrReadOnly`，它将确保认证过的请求有读写权限，未认证过的请求有只读权限。
 
-First add the following import in the views module
+首先在视图中添加下面的导入
 
     from rest_framework import permissions
 
-Then, add the following property to **both** the `SnippetList` and `SnippetDetail` view classes.
+给两个视图类 `SnippetList` 和 `SnippetDetail` 添加以下内容。
 
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
-## Adding login to the Browsable API
+## 为可浏览的 API 添加登录
 
-If you open a browser and navigate to the browsable API at the moment, you'll find that you're no longer able to create new code snippets.  In order to do so we'd need to be able to login as a user.
+如果你打开浏览器并导航到浏览 API 的时刻，你将发现你不能创建新的 snippet 实例了。为了这样做，我们需要像一个用户一样能够登录。
+我们可以为用户添加一个登录视图，编辑在项目级目录下的 `urls.py` 文件。
 
-We can add a login view for use with the browsable API, by editing the URLconf in our project-level `urls.py` file.
-
-Add the following import at the top of the file:
+在文件头部添加一下导入内容：
 
     from django.conf.urls import include
 
-And, at the end of the file, add a pattern to include the login and logout views for the browsable API.
+在文件结尾为可浏览API添加一个模式包括登录和注销的视图。
 
     urlpatterns += [
         url(r'^api-auth/', include('rest_framework.urls',
                                    namespace='rest_framework')),
     ]
 
-The `r'^api-auth/'` part of pattern can actually be whatever URL you want to use.  The only restriction is that the included urls must use the `'rest_framework'` namespace.
+模式的这部分 `r'^api-auth/'` 你可以定义成任何你想要的值。唯一的限制是 included 的部分值必须使用 `'rest_framework'` 做命名空间。
 
-Now if you open up the browser again and refresh the page you'll see a 'Login' link in the top right of the page.  If you log in as one of the users you created earlier, you'll be able to create code snippets again.
+现在，如果你打开浏览器再次刷新页面，你会在页面的右上角看到“登录”链接。如果你用之前创建的用户登录，你就可以再次创建 snippet 模型实例了。
 
-Once you've created a few code snippets, navigate to the '/users/' endpoint, and notice that the representation includes a list of the snippet pks that are associated with each user, in each user's 'snippets' field.
+你已经创建了一些 snippet 实例，找到 '/users/' 的终点,注意，snippet 实例列表中包括一些主键，它们分别对应用户模型中的每一个 'snippets' 字段。
 
-## Object level permissions
+## 对象级权限
 
-Really we'd like all code snippets to be visible to anyone, but also make sure that only the user that created a code snippet is able to update or delete it.
+我们真的希望所有的模型数据是任何人都可以看到，但也要确保只有创建这个模型数据的用户才可以更新或删除它。
 
-To do that we're going to need to create a custom permission.
+我们需要去创建一个自定义权限。
 
-In the snippets app, create a new file, `permissions.py`
+在 snippet 应用里创建一个新文件 `permissions.py`。
 
     from rest_framework import permissions
 
@@ -177,42 +174,42 @@ In the snippets app, create a new file, `permissions.py`
             # Write permissions are only allowed to the owner of the snippet.
             return obj.owner == request.user
 
-Now we can add that custom permission to our snippet instance endpoint, by editing the `permission_classes` property on the `SnippetDetail` class:
+现在我们可以添加自定义权限到 snippet 实例后端，在 `SnippetDetail` 类里编辑 `permission_classes` 的属性值。
 
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,
                           IsOwnerOrReadOnly,)
 
-Make sure to also import the `IsOwnerOrReadOnly` class.
+确认已经导入 `IsOwnerOrReadOnly` 类。
 
     from snippets.permissions import IsOwnerOrReadOnly
 
-Now, if you open a browser again, you find that the 'DELETE' and 'PUT' actions only appear on a snippet instance endpoint if you're logged in as the same user that created the code snippet.
+现在，你再打开一个浏览器，如果你用创建这个实例的用户登录，你会发现“删除”和“修改”的行为会出现在snippet实例后端。
 
-## Authenticating with the API
+## API 的认证
 
-Because we now have a set of permissions on the API, we need to authenticate our requests to it if we want to edit any snippets.  We haven't set up any [authentication classes][authentication], so the defaults are currently applied, which are `SessionAuthentication` and `BasicAuthentication`.
+因为我们现在有了 API 的一组权限，如果我们要编辑 snippet 模型数据，我们需要验证要求。我们还没有建立任何认证类 [authentication classes][authentication]，所以默认的 `SessionAuthentication`  和 `BasicAuthentication` 目前被应用。
 
-When we interact with the API through the web browser, we can login, and the browser session will then provide the required authentication for the requests.
+当我们使用API通过Web浏览器进行交互时，我们要登录，浏览器会话将提供对请求所需的认证。
 
-If we're interacting with the API programmatically we need to explicitly provide the authentication credentials on each request.
+如果我们正在用API程序进行互动，需要为每一次的请求提供认证凭据。
 
-If we try to create a snippet without authenticating, we'll get an error:
+如果我们试图不携带认证信息而去创造一个snippet实例，我们会得到一个错误：
 
     curl -i -X POST http://127.0.0.1:8000/snippets/ -d "code=print 123"
 
     {"detail": "Authentication credentials were not provided."}
 
-We can make a successful request by including the username and password of one of the users we created earlier.
+我们可以通过包括之前创建过的用户中的一个用户名和密码信息使一个请求成功。
 
     curl -X POST http://127.0.0.1:8000/snippets/ -d "code=print 789" -u tom:password
 
     {"id": 5, "owner": "tom", "title": "foo", "code": "print 789", "linenos": false, "language": "python", "style": "friendly"}
 
-## Summary
+## 总结
 
-We've now got a fairly fine-grained set of permissions on our Web API, and end points for users of the system and for the code snippets that they have created.
+现在我们的 Web API 有了一个相当细粒度的权限集,他们已经为系统用户和 snippet 模型创建了结点。
 
-In [part 5][tut-5] of the tutorial we'll look at how we can tie everything together by creating an HTML endpoint for our highlighted snippets, and improve the cohesion of our API by using hyperlinking for the relationships within the system.
+在教程的第5部分 [part 5][tut-5] ，将会看到我们如何通过为我们的高亮代码创造一个HTML终端而把所有都联系起来，利用超链接的关系在系统提高我们的API的凝聚力。
 
 [authentication]: ../api-guide/authentication.md
 [tut-5]: 5-relationships-and-hyperlinked-apis.md
